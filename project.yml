@@ -11,8 +11,6 @@ targets:
     sources:
       - path: Sources
       - path: Assets.xcassets
-      - path: Resources/web
-        type: folder
     settings:
       base:
         CODE_SIGNING_ALLOWED: NO
