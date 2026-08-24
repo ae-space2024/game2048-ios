@@ -1,0 +1,8 @@
+build/
+Game2048.xcodeproj
+Game2048.ipa
+Payload/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+.DS_Store
+Assets.xcassets/AppIcon.appiconset/icon.png
