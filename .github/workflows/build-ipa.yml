@@ -18,11 +18,13 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
-      - name: Convert app icon to PNG
+      - name: Prepare app icon
         run: |
           cd Assets.xcassets/AppIcon.appiconset
           if [ -f icon.jpg ]; then
             sips -s format png icon.jpg --out icon.png
+            sips -z 1024 1024 icon.png
+            rm -f icon.jpg
           fi
 
       - name: Generate Xcode project
