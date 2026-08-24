@@ -11,7 +11,7 @@ targets:
     sources:
       - path: Sources
       - path: Assets.xcassets
-      - path: Resources
+      - path: Resources/web
         type: folder
     settings:
       base:
