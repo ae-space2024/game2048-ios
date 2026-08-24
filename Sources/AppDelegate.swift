@@ -11,6 +11,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         window?.makeKeyAndVisible()
 
         if let url = launchOptions?[.url] as? URL {
+            vc.loadViewIfNeeded()
             vc.openFile(url: url)
         }
         return true
