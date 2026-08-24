@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>2048</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',sans-serif}
+body{background:linear-gradient(135deg,#0f0c29 0%,#1a1a3e 50%,#24243e 100%);display:flex;align-items:center;justify-content:center;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.wrap{width:100%;max-width:420px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.hdr{width:100%;display:flex;justify-content:space-between;align-items:center}
+.title{font-size:42px;font-weight:800;background:linear-gradient(135deg,#43e97b,#38f9d7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-2px;text-shadow:0 0 40px rgba(67,233,123,0.3)}
+.scores{display:flex;gap:8px}
+.score-box{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:8px 14px;text-align:center;min-width:72px;backdrop-filter:blur(10px)}
+.score-box .label{font-size:10px;font-weight:600;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px}
+.score-box .val{font-size:22px;font-weight:700;color:#fff;margin-top:2px}
+.info{width:100%;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:rgba(255,255,255,0.4)}
+.info .hint{display:flex;align-items:center;gap:4px}
+.btn{background:rgba(67,233,123,0.15);border:1px solid rgba(67,233,123,0.3);color:#43e97b;padding:6px 18px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;backdrop-filter:blur(10px)}
+.btn:active{transform:scale(0.95);background:rgba(67,233,123,0.3)}
+.board{position:relative;width:100%;aspect-ratio:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:10px;backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.05);touch-action:none}
+.grid-bg{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:10px;width:100%;height:100%}
+.cell-bg{background:rgba(255,255,255,0.025);border-radius:10px}
+.tiles{position:absolute;inset:10px;pointer-events:none}
+.tile{position:absolute;width:calc((100% - 30px) / 4);height:calc((100% - 30px) / 4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;transition:transform 0.12s ease-out;will-change:transform}
+.tile.new{animation:pop 0.2s ease-out}
+.tile.merged{animation:merge 0.2s ease-out}
+@keyframes pop{0%{transform:scale(0) translate(var(--tx),var(--ty))}60%{transform:scale(1.1) translate(var(--tx),var(--ty))}100%{transform:scale(1) translate(var(--tx),var(--ty))}}
+@keyframes merge{0%{transform:scale(1) translate(var(--tx),var(--ty))}50%{transform:scale(1.2) translate(var(--tx),var(--ty))}100%{transform:scale(1) translate(var(--tx),var(--ty))}}
+.tile-2{background:linear-gradient(135deg,#2196F3,#1976D2);color:#fff;box-shadow:0 4px 12px rgba(33,150,243,0.3)}
+.tile-4{background:linear-gradient(135deg,#00BCD4,#0097A7);color:#fff;box-shadow:0 4px 12px rgba(0,188,212,0.3)}
+.tile-8{background:linear-gradient(135deg,#4CAF50,#388E3C);color:#fff;box-shadow:0 4px 12px rgba(76,175,80,0.3)}
+.tile-16{background:linear-gradient(135deg,#8BC34A,#689F38);color:#fff;box-shadow:0 4px 12px rgba(139,195,74,0.3)}
+.tile-32{background:linear-gradient(135deg,#FFC107,#FFA000);color:#fff;box-shadow:0 4px 12px rgba(255,193,7,0.3)}
+.tile-64{background:linear-gradient(135deg,#FF9800,#F57C00);color:#fff;box-shadow:0 4px 12px rgba(255,152,0,0.4)}
+.tile-128{background:linear-gradient(135deg,#FF5722,#E64A19);color:#fff;box-shadow:0 4px 14px rgba(255,87,34,0.4)}
+.tile-256{background:linear-gradient(135deg,#F44336,#D32F2F);color:#fff;box-shadow:0 4px 14px rgba(244,67,54,0.4)}
+.tile-512{background:linear-gradient(135deg,#E91E63,#C2185B);color:#fff;box-shadow:0 4px 14px rgba(233,30,99,0.4)}
+.tile-1024{background:linear-gradient(135deg,#9C27B0,#7B1FA2);color:#fff;box-shadow:0 4px 16px rgba(156,39,176,0.5)}
+.tile-2048{background:linear-gradient(135deg,#FFD700,#FF8F00);color:#fff;box-shadow:0 0 30px rgba(255,215,0,0.5),0 4px 16px rgba(255,143,0,0.4);animation:glow 2s ease-in-out infinite}
+.tile-super{background:linear-gradient(135deg,#00E676,#00BFA5);color:#fff;box-shadow:0 0 30px rgba(0,230,118,0.5)}
+@keyframes glow{0%,100%{box-shadow:0 0 20px rgba(255,215,0,0.4),0 4px 16px rgba(255,143,0,0.4)}50%{box-shadow:0 0 40px rgba(255,215,0,0.7),0 4px 20px rgba(255,143,0,0.6)}}
+.tile .num{font-size:28px;letter-spacing:-1px}
+.tile[data-digits="3"] .num{font-size:24px}
+.tile[data-digits="4"] .num{font-size:20px}
+.tile[data-digits="5"] .num{font-size:17px}
+.overlay{position:absolute;inset:0;background:rgba(15,12,41,0.85);backdrop-filter:blur(8px);border-radius:16px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:10;animation:fadeIn 0.3s ease-out}
+.overlay.show{display:flex}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.overlay h2{font-size:32px;font-weight:800}
+.overlay.win h2{background:linear-gradient(135deg,#FFD700,#FF8F00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.overlay.lose h2{background:linear-gradient(135deg,#F44336,#E91E63);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.overlay p{font-size:14px;color:rgba(255,255,255,0.5)}
+.overlay .btns{display:flex;gap:10px}
+.overlay .btn{padding:10px 24px;font-size:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="hdr">
+<div class="title">2048</div>
+<div class="scores">
+<div class="score-box"><div class="label">得分</div><div class="val" id="score">0</div></div>
+<div class="score-box"><div class="label">最佳</div><div class="val" id="best">0</div></div>
+</div>
+</div>
+<div class="info">
+<div class="hint">滑动合并方块</div>
+<button class="btn" onclick="newGame()">新游戏</button>
+</div>
+<div class="board" id="board">
+<div class="grid-bg" id="gridBg"></div>
+<div class="tiles" id="tiles"></div>
+<div class="overlay win" id="winOverlay"><h2>胜利!</h2><p>你达到了 2048!</p><div class="btns"><button class="btn" onclick="keepGoing()">继续</button><button class="btn" onclick="newGame()">重来</button></div></div>
+<div class="overlay lose" id="loseOverlay"><h2>游戏结束</h2><p>没有可移动的方块了</p><div class="btns"><button class="btn" onclick="newGame()">重来</button></div></div>
+</div>
+</div>
+<script>
+const SIZE=4;
+const GAP=10;
+let board,score,best,keepGoingFlag,won,tileIdCounter;
+let touchStartX=0,touchStartY=0;
+
+function init(){
+const gb=document.getElementById('gridBg');
+gb.innerHTML='';
+for(let i=0;i<SIZE*SIZE;i++){const c=document.createElement('div');c.className='cell-bg';gb.appendChild(c)}
+best=parseInt(localStorage.getItem('best2048')||'0');
+document.getElementById('best').textContent=best;
+newGame();
+}
+
+function newGame(){
+board=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
+score=0;won=false;keepGoingFlag=false;
+document.getElementById('winOverlay').classList.remove('show');
+document.getElementById('loseOverlay').classList.remove('show');
+tileIdCounter=0;
+addRandomTile();addRandomTile();
+render();
+updateScore();
+}
+
+function addRandomTile(){
+const empty=[];
+for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)if(!board[r][c])empty.push({r,c});
+if(empty.length===0)return false;
+const{r,c}=empty[Math.floor(Math.random()*empty.length)];
+board[r][c]={value:Math.random()<0.9?2:4,id:++tileIdCounter,isNew:true};
+return true;
+}
+
+function render(){
+const container=document.getElementById('tiles');
+const cellSize=`calc((100% - ${GAP*(SIZE-1)}px) / ${SIZE})`;
+const existing={};
+container.querySelectorAll('.tile').forEach(t=>{existing[t.dataset.id]=t});
+const used=new Set();
+
+for(let r=0;r<SIZE;r++){
+for(let c=0;c<SIZE;c++){
+const tile=board[r][c];
+if(!tile)continue;
+used.add(String(tile.id));
+const tx=c*(100+GAP/SIZE)/(SIZE);
+const ty=r*(100+GAP/SIZE)/(SIZE);
+const txPx=`calc(${c} * (100% - ${GAP*(SIZE-1)}px) / ${SIZE} + ${c*GAP}px)`;
+const tyPx=`calc(${r} * (100% - ${GAP*(SIZE-1)}px) / ${SIZE} + ${r*GAP}px)`;
+let el=existing[tile.id];
+if(!el){
+el=document.createElement('div');
+el.className='tile';
+el.dataset.id=tile.id;
+el.innerHTML='<span class="num"></span>';
+container.appendChild(el);
+}
+el.style.width=cellSize;
+el.style.height=cellSize;
+el.style.transform=`translate(${txPx},${tyPx})`;
+el.style.setProperty('--tx',txPx);
+el.style.setProperty('--ty',tyPx);
+const digits=String(tile.value).length;
+el.dataset.digits=digits;
+el.querySelector('.num').textContent=tile.value;
+el.className='tile tile-'+(tile.value<=2048?tile.value:'super');
+if(tile.isNew){el.classList.add('new');tile.isNew=false}
+if(tile.isMerged){el.classList.add('merged');tile.isMerged=false;setTimeout(()=>el.classList.remove('merged'),250)}
+}
+}
+Object.keys(existing).forEach(id=>{if(!used.has(id)){existing[id].remove()}});
+}
+
+function move(dr,dc){
+let moved=false;let mergedThisTurn=false;
+const newBoard=Array.from({length:SIZE},()=>Array(SIZE).fill(null));
+const tilesToProcess=[];
+for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)tilesToProcess.push({r,c});
+tilesToProcess.sort((a,b)=>{
+if(dr!==0)return dr>0?b.r-a.r:a.r-b.r;
+return dc>0?b.c-a.c:a.c-b.c;
+});
+const mergedSet=new Set();
+for(const{r,c}of tilesToProcess){
+const tile=board[r][c];
+if(!tile)continue;
+let nr=r,nc=c;
+while(true){
+const tr=nr+dr,tc=nc+dc;
+if(tr<0||tr>=SIZE||tc<0||tc>=SIZE)break;
+if(newBoard[tr][tc]===null){nr=tr;nc=tc;continue}
+if(newBoard[tr][tc].value===tile.value&&!mergedSet.has(newBoard[tr][tc].id)){
+nr=tr;nc=tc;mergedThisTurn=true;
+break;
+}
+break;
+}
+if(newBoard[nr][nc]===null){
+newBoard[nr][nc]={...tile};
+if(nr!==r||nc!==c)moved=true;
+}else{
+const old=newBoard[nr][nc];
+newBoard[nr][nc]={value:old.value*2,id:old.id,isMerged:true};
+mergedSet.add(old.id);
+score+=old.value*2;
+if(old.value*2===2048&&!won)won=true;
+moved=true;
+}
+}
+if(moved){
+board=newBoard;
+addRandomTile();
+render();
+updateScore();
+if(won&&!keepGoingFlag){document.getElementById('winOverlay').classList.add('show')}
+if(!canMove()){document.getElementById('loseOverlay').classList.add('show')}
+playSound(mergedThisTurn?'merge':'move');
+}
+return moved;
+}
+
+function canMove(){
+for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+if(!board[r][c])return true;
+if(c<SIZE-1&&board[r][c+1]&&board[r][c].value===board[r][c+1].value)return true;
+if(r<SIZE-1&&board[r+1][c]&&board[r][c].value===board[r+1][c].value)return true;
+}
+return false;
+}
+
+function updateScore(){
+document.getElementById('score').textContent=score;
+if(score>best){best=score;localStorage.setItem('best2048',String(best))}
+document.getElementById('best').textContent=best;
+}
+
+function keepGoing(){keepGoingFlag=true;document.getElementById('winOverlay').classList.remove('show')}
+
+// Touch controls
+const boardEl=document.getElementById('board');
+boardEl.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];touchStartX=t.clientX;touchStartY=t.clientY},{passive:false});
+boardEl.addEventListener('touchend',e=>{
+e.preventDefault();
+const t=e.changedTouches[0];
+const dx=t.clientX-touchStartX;
+const dy=t.clientY-touchStartY;
+const adx=Math.abs(dx),ady=Math.abs(dy);
+const threshold=25;
+if(Math.max(adx,ady)<threshold)return;
+if(adx>ady)move(0,dx>0?1:-1);
+else move(dy>0?1:-1,0);
+},{passive:false});
+
+// Keyboard for testing
+document.addEventListener('keydown',e=>{
+switch(e.key){
+case'ArrowLeft':move(0,-1);break;
+case'ArrowRight':move(0,1);break;
+case'ArrowUp':move(-1,0);break;
+case'ArrowDown':move(1,0);break;
+}
+});
+
+// Sound effects via Web Audio API
+let audioCtx=null;
+function playSound(type){
+try{
+if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+const osc=audioCtx.createOscillator();
+const gain=audioCtx.createGain();
+osc.connect(gain);gain.connect(audioCtx.destination);
+if(type==='merge'){
+osc.frequency.setValueAtTime(440,audioCtx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(660,audioCtx.currentTime+0.1);
+gain.gain.setValueAtTime(0.15,audioCtx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.15);
+osc.start();osc.stop(audioCtx.currentTime+0.15);
+}else{
+osc.frequency.setValueAtTime(200,audioCtx.currentTime);
+gain.gain.setValueAtTime(0.06,audioCtx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.06);
+osc.start();osc.stop(audioCtx.currentTime+0.06);
+}
+}catch(e){}
+}
+
+init();
+</script>
+</body>
+</html>
