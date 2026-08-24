@@ -2,11 +2,12 @@ import UIKit
 import WebKit
 import UniformTypeIdentifiers
 
-class ViewController: UIViewController, UIDocumentPickerDelegate {
+class ViewController: UIViewController, UIDocumentPickerDelegate, WKNavigationDelegate {
 
     private var webView: WKWebView!
     private var toolbar: UIToolbar!
     private var titleLabel: UILabel!
+    private var currentFileURL: URL?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -30,6 +31,7 @@ class ViewController: UIViewController, UIDocumentPickerDelegate {
         webView.backgroundColor = UIColor(red: 0.06, green: 0.05, blue: 0.16, alpha: 1.0)
         webView.scrollView.backgroundColor = UIColor(red: 0.06, green: 0.05, blue: 0.16, alpha: 1.0)
         webView.translatesAutoresizingMaskIntoConstraints = false
+        webView.navigationDelegate = self
         view.addSubview(webView)
     }
 
@@ -90,7 +92,7 @@ class ViewController: UIViewController, UIDocumentPickerDelegate {
     }
 
     @objc private func openFilePicker() {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [UTType.html, UTType.data])
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [UTType.item])
         picker.delegate = self
         picker.allowsMultipleSelection = false
         picker.modalPresentationStyle = UIModalPresentationStyle.formSheet
@@ -106,7 +108,7 @@ class ViewController: UIViewController, UIDocumentPickerDelegate {
     }
 
     @objc private func shareFile() {
-        guard let url = webView.url else { return }
+        guard let url = currentFileURL else { return }
         let shareVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
         shareVC.popoverPresentationController?.barButtonItem = toolbar.items?.last
         present(shareVC, animated: true)
@@ -114,11 +116,24 @@ class ViewController: UIViewController, UIDocumentPickerDelegate {
 
     func openFile(url: URL) {
         let needsAccess = url.startAccessingSecurityScopedResource()
-        defer { if needsAccess { url.stopAccessingSecurityScopedResource() } }
 
-        let dir = url.deletingLastPathComponent()
+        let tempDir = FileManager.default.temporaryDirectory
+        let destURL = tempDir.appendingPathComponent(url.lastPathComponent)
+
+        do {
+            if FileManager.default.fileExists(atPath: destURL.path) {
+                try FileManager.default.removeItem(at: destURL)
+            }
+            try FileManager.default.copyItem(at: url, to: destURL)
+        } catch {
+            print("copy failed: \(error.localizedDescription)")
+        }
+
+        if needsAccess { url.stopAccessingSecurityScopedResource() }
+
+        currentFileURL = destURL
         titleLabel.text = url.lastPathComponent
-        webView.loadFileURL(url, allowingReadAccessTo: dir)
+        webView.loadFileURL(destURL, allowingReadAccessTo: tempDir)
     }
 
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
