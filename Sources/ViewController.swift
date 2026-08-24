@@ -1,5 +1,6 @@
 import UIKit
 import WebKit
+import UniformTypeIdentifiers
 
 class ViewController: UIViewController, UIDocumentPickerDelegate {
 
@@ -19,11 +20,8 @@ class ViewController: UIViewController, UIDocumentPickerDelegate {
         applyConstraints()
     }
 
-    // MARK: - UI Setup
-
     private func setupWebView() {
         let config = WKWebViewConfiguration()
-        config.preferences.javaScriptEnabled = true
         config.preferences.javaScriptCanOpenWindowsAutomatically = true
         config.allowsInlineMediaPlayback = true
 
@@ -69,8 +67,6 @@ class ViewController: UIViewController, UIDocumentPickerDelegate {
         view.addSubview(titleLabel)
     }
 
-    // MARK: - Constraints
-
     private func applyConstraints() {
         let safeTop = view.safeAreaLayoutGuide.topAnchor
         let safeBottom = view.safeAreaLayoutGuide.bottomAnchor
@@ -93,16 +89,11 @@ class ViewController: UIViewController, UIDocumentPickerDelegate {
         ])
     }
 
-    // MARK: - Actions
-
     @objc private func openFilePicker() {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [
-            UTTypeHTML.html,
-            UTType.data
-        ], asCopy: true)
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [UTType.html, UTType.data])
         picker.delegate = self
         picker.allowsMultipleSelection = false
-        picker.modalPresentationStyle = .formSheet
+        picker.modalPresentationStyle = UIModalPresentationStyle.formSheet
         present(picker, animated: true)
     }
 
@@ -121,8 +112,6 @@ class ViewController: UIViewController, UIDocumentPickerDelegate {
         present(shareVC, animated: true)
     }
 
-    // MARK: - File Loading
-
     func openFile(url: URL) {
         let needsAccess = url.startAccessingSecurityScopedResource()
         defer { if needsAccess { url.stopAccessingSecurityScopedResource() } }
@@ -132,12 +121,8 @@ class ViewController: UIViewController, UIDocumentPickerDelegate {
         webView.loadFileURL(url, allowingReadAccessTo: dir)
     }
 
-    // MARK: - DocumentPickerDelegate
-
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         guard let url = urls.first else { return }
         openFile(url: url)
     }
 }
-
-import UniformTypeIdentifiers
